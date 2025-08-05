@@ -21,7 +21,7 @@
   strategy: free
   become: true
   roles:
-    - microsoft-defender-linux
+    - ../roles/microsoft-defender-linux
 
 - name: Configure Fail2Ban
   hosts: fail2ban
@@ -29,7 +29,7 @@
   strategy: free
   become: true
   roles:
-    - fail2ban-config
+    - ../roles/fail2ban-config
 
 - name: Configure Apache web servers
   hosts: apache
@@ -38,7 +38,7 @@
   become: true
   roles:
     - buluma.httpd
-    - apache-config
+    - ../roles/apache-config
 
 - name: Configure MySQL.
   hosts: mysql
@@ -46,7 +46,7 @@
   strategy: free
   become: true
   roles:
-    - mysql-server
+    - ../roles/mysql-server
 
 - name: Configure PostgreSQL.
   hosts: postgresql
@@ -54,7 +54,7 @@
   strategy: free
   become: true
   roles:
-    - postgresql-server
+    - ../roles/postgresql-server
 
 - name: Touch /root/base_done
   hosts: all
@@ -69,4 +69,3 @@
         owner: root
         group: root
         mode: 0644
-        
