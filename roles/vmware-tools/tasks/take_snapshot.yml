@@ -1,0 +1,8 @@
+- name: "Snapshot {{ vm_info.vm }} - {{ lc_env }} lifecycle"
+  community.vmware.vmware_guest_snapshot:
+    datacenter: "{{ vmware_datacenter }}"
+    folder: "{{ vm_info.folder }}"
+    name: "{{ vm_info.vm }}"
+    snapshot_name: "Automated_Patch_Cycle_{{ lc_env }}_{{ snap_date }}"
+    description: "Snapshot by Ansible Automation Platform taken before applying updates to hosts in the {{ lc_env }} lifecycle."
+    state: present

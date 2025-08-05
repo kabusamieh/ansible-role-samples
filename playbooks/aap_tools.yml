@@ -1,0 +1,5 @@
+- name: "Use AAP Tools"
+  hosts: localhost
+  gather_facts: true
+  roles:
+    - aap-controller-tools

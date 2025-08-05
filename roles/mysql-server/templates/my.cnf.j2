@@ -1,0 +1,100 @@
+[client]
+port	= 3306
+socket	= /var/lib/mysql/mysql.sock
+
+[mysqld]
+datadir         = /var/lib/mysql
+socket          = /var/lib/mysql/mysql.sock
+pid_file        = /var/lib/mysql/mysql.pid
+user            = mysql
+port            = 3306
+skip_name_resolve   = {{ mysql_skip_dns }}
+performance_schema         = 1
+innodb          = 1
+{% if config_rocksdb is defined and config_rocksdb %}
+rocksdb         = 1
+{% endif %}
+{% if change_se is defined and change_se and default_se is defined and default_se != "InnoDB" %}
+default_storage_engine  = {{ default_se }}
+{% else %}
+default_storage_engine  = InnoDB
+{% endif %}
+default_tmp_storage_engine = InnoDB
+
+tmpdir                  = /var/tmp/
+log_error               = /var/lib/mysql/mysqld.log
+log_timestamps          = SYSTEM
+slow_query_log          = 1
+slow_query_log_file     = /var/lib/mysql/slow-queries.log
+log_queries_not_using_indexes   = 0
+log_bin                 = mysql_bin
+binlog_expire_logs_seconds = {{ mysql_binlog_expires }}
+general_log = {{ mysql_general_log }}
+general_log_file = /var/lib/mysql/general.log
+
+tmp_table_size      = {{ mysql_tmp_table_meg }}M
+max_heap_table_size = {{ mysql_heap_table_meg }}M
+max_connections     = {{ mysql_max_conn }}
+open_files_limit    = {{ mysql_open_files }}
+thread_pool_size                = 16
+table_open_cache                = 4096
+table_open_cache_instances      = 16
+{% if mysql_table_def_cache is defined %}
+table_definition_cache          = {{ mysql_table_def_cache }}
+{% endif %}
+optimizer_search_depth          = {{ mysql_search_depth }}
+
+# InnoDB Specific Variables
+innodb_temp_data_file_path   = {{ innodb_tempdata_path }}
+innodb_buffer_pool_size      = {{ innodb_buffer_size_gig }}G
+innodb_buffer_pool_instances = {{ innodb_buffer_instances }}
+innodb_page_cleaners         = {{ innodb_page_cleaners }}
+innodb_redo_log_capacity     = {{ innodb_redo_log_meg }}M
+innodb_log_buffer_size       = {{ innodb_log_buffer_meg }}M
+innodb_file_per_table        = 1
+innodb_flush_method	         = {{ innodb_flush_method }}
+innodb_numa_interleave       = {{ innodb_numa_interleave }}
+innodb_flush_log_at_trx_commit  = {{ innodb_flush_on_commit }}
+innodb_autoinc_lock_mode        = 2
+innodb_io_capacity              = {{ innodb_io_capacity }}
+
+{% if config_rocksdb is defined and config_rocksdb %}
+# RocksDB Specific Variables
+rocksdb_max_open_files=4096
+rocksdb_wal_recovery_mode=2
+rocksdb_max_background_jobs=8
+rocksdb_max_total_wal_size={{ rocksdb_max_wal_gig }}G
+rocksdb_block_size={{ rocksdb_block_size }}
+rocksdb_block_cache_size={{ rocksdb_block_cache_gig }}G
+rocksdb_table_cache_numshardbits=6
+rocksdb_commit_in_the_middle=1
+rocksdb_bulk_load_size={{ rocksdb_bulk_load }}
+rocksdb_use_direct_reads=1
+rocksdb_use_direct_io_for_flush_and_compaction=1
+rocksdb_max_row_locks=1073741824
+rocksdb_max_subcompactions=4
+rocksdb_compaction_readahead_size={{ rocksdb_compaction_readahead_meg }}M
+
+# Rate Limiter
+# rocksdb_bytes_per_sync=4194304
+rocksdb_bytes_per_sync=0
+# rocksdb_wal_bytes_per_sync=4194304
+rocksdb_wal_bytes_per_sync=0
+# rocksdb_rate_limiter_bytes_per_sec=104857600 #100MB/s. Increase if you're running on higher spec machines
+rocksdb_rate_limiter_bytes_per_sec=0
+
+# triggering compaction if there are many sequential deletes (Deletion Triggered Compaction)
+rocksdb_compaction_sequential_deletes_count_sd=1
+rocksdb_compaction_sequential_deletes=199999
+rocksdb_compaction_sequential_deletes_window=200000
+
+{% if rocksdb_def_cf_opt is defined %}
+rocksdb_default_cf_options={{ rocksdb_def_cf_opts }}
+{% endif %}
+{% endif %}
+
+{% if do_repl is defined and do_repl %}
+{% if repl_options is defined %}
+{{ repl_options }}
+{% endif %}
+{% endif %}

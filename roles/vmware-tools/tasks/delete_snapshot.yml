@@ -1,0 +1,24 @@
+- name: "Get {{ vm_info.vm }} Snapshot Info"
+  community.vmware.vmware_guest_snapshot_info:
+    datacenter: "{{ vmware_datacenter }}"
+    folder: "{{ vm_info.folder }}"
+    name: "{{ vm_info.vm }}"
+  register: snapshot_info
+  ignore_errors: true
+
+- name: "Get list of Snapshot Names"
+  ansible.builtin.set_fact:
+    snapshot_list: "{{ snapshot_info | community.general.json_query('guest_snapshots.snapshots[*].name') | list }}"
+    name_lookup: "Automated_Patch_Cycle_{{ lc_env }}"
+  ignore_errors: true
+
+- name: "Delete {{ vm_info.vm }} Snapshot - {{ lc_env }} lifecycle"
+  community.vmware.vmware_guest_snapshot:
+    datacenter: "{{ vmware_datacenter }}"
+    folder: "{{ vm_info.folder }}"
+    name: "{{ vm_info.vm }}"
+    snapshot_name: "{{ item }}"
+    state: absent
+  when: name_lookup in item
+  loop: "{{ snapshot_list }}"
+  ignore_errors: true

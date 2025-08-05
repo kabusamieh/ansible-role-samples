@@ -1,0 +1,17 @@
+- name: "Disable postgresql module."
+  ansible.builtin.command: dnf module disable postgresql -y
+  ignore_errors: true
+
+- name: "Install database dependencies."
+  ansible.builtin.package:
+    name:
+      - "postgresql{{ pgsql_version }}"
+      - "postgresql{{ pgsql_version }}-server"
+      - "postgresql{{ pgsql_version }}-libs"
+    state: present
+
+# Required for part of Postgres collection.
+- name: "Pip install psycopg2 binary."
+  ansible.builtin.pip:
+    name: psycopg2-binary
+    state: present

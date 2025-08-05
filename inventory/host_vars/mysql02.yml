@@ -1,0 +1,62 @@
+mysql_tmp_table_meg: 256
+mysql_heap_table_meg: 256
+mysql_max_conn: 1024
+mysql_open_files: 9999
+mysql_table_def_cache: 2048
+mysql_search_depth: 0
+mysql_skip_dns: 1
+mysql_binlog_expires: 86400
+
+innodb_tempdata_path: ibtmp1:12M:autoextend:max:5G
+innodb_buffer_size_gig: 8
+innodb_redo_log_meg: 64
+innodb_log_buffer_meg: 8
+innodb_page_cleaners: 8
+innodb_numa_interleave: 1
+innodb_flush_on_commit: 0
+innodb_io_capacity: 500
+
+rocksdb_max_wal_gig: 32
+rocksdb_block_cache_gig: 128
+rocksdb_compaction_readahead_meg: 16
+rocksdb_bulk_load: 1000000
+rocksdb_def_cf_opts: "write_buffer_size=512m;target_file_size_base=1g;max_bytes_for_level_base=10g;max_write_buffer_number=4;level0_file_num_compaction_trigger=4;level0_slowdown_writes_trigger=20;level0_stop_writes_trigger=30;max_write_buffer_number=4;block_based_table_factory={cache_index_and_filter_blocks=1;filter_policy=bloomfilter:10:false;whole_key_filtering=0};level_compaction_dynamic_level_bytes=true;optimize_filters_for_hits=true;memtable_prefix_bloom_size_ratio=0.05;prefix_extractor=capped:12;compaction_pri=kMinOverlappingRatio;compression=kLZ4Compression;bottommost_compression=kZSTD;compression_opts=-14:4:0;compression_per_level=kNoCompression:kNoCompression:kLZ4Compression:kLZ4Compression:kLZ4Compression:kLZ4Compression:kZSTD"
+
+default_se: RocksDB
+has_rocksdb: true
+
+mysql_create_readonly_user: false # Delete this or set to true to create readonly user once we populate with DBs
+#mysql_user_list:
+# - { user: user, password: "{{ mysql_user_pass }}", db_name: 'db' }
+
+# Temporarily need to replicate from existing db
+do_repl: true
+repl_options: |
+  server_id = 39
+  replica_preserve_commit_order   = ON
+  replica_parallel_workers        = 5
+  replica_pending_jobs_size_max   = 1G
+
+  replicate-ignore-db=db1
+  replicate-ignore-db=db2
+  replicate-ignore-db=db3
+  replicate-ignore-db=db4
+  replicate-ignore-db=db5
+  replicate-ignore-db=db6
+  replicate-ignore-db=db7
+  replicate-ignore-db=db8
+
+# Local Linux user accounts
+user1_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          33353465386464353263316161363438316166306264626363613433366663343232303031623662
+          6564666463393062396435666466393461666237336537390a636264336533363238356665633138
+          38313662326231626232386336636232626436376162636162636338376563316561383461336465
+          3932343264356133340a393263663934626562626438396238643230616535303834396436363563
+          33363834623531376532663937336465643531333835303164323331663732623833
+local_users:
+  - { user: user1, password: "{{ user1_password }}", description: "Data Warehouse Execution User", shell: "/sbin/nologin" }
+
+remount_paths:
+  - { src: /var/lib/mysql, dest: /data00/mysql, owner: mysql, group: mysql,  services: [mysqld] }
+  - { src: /var/lib/mysql-files, dest: /data00/mysql-files, owner: mysql, group: mysql,  services: [] }

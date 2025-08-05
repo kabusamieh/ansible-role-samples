@@ -1,0 +1,50 @@
+- name: "Wait for host to be reachable if still snapshotting."
+  ansible.builtin.wait_for_connection:
+    timeout: 3600
+  when: do_wait
+  tags: apply
+
+- name: "Wait for Base Setup to finish if running."
+  ansible.builtin.wait_for:
+    path: /root/base_done
+    state: present
+    timeout: 3600
+  when: do_wait
+  tags: apply
+
+- name: "Check for patch omission."
+  ansible.builtin.stat:
+    path: "{{ omit_file }}"
+  register: stat_omit
+  tags: apply
+
+- name: "Exit if omit file exists."
+  ansible.builtin.fail:
+    msg: "Omitting System from Patch. Bye bye."
+  when: stat_omit.stat.exists
+  tags: apply
+
+- name: "Populate service facts."
+  ansible.builtin.service_facts:
+  tags: apply
+
+- name: "Apply package updates - RHEL7 (YUM)"
+  include_tasks:
+    file: patch-yum.yml
+    apply:
+      tags: apply
+  when: ansible_distribution_major_version == '7'
+  tags: apply
+
+- name: "Apply package updates - RHEL8+ (DNF)"
+  include_tasks:
+    file: patch-dnf.yml
+    apply:
+      tags: apply
+  when: ansible_distribution_major_version != '7'
+  tags: apply
+
+- name: "Wait for host to be reachable if still restarting."
+  ansible.builtin.wait_for_connection:
+    timeout: 3600
+  when: reboot_required.rc != 0

@@ -1,0 +1,9 @@
+all:
+  hosts:
+    mysql01:
+    mysql02:
+  children:
+    mysql:
+      hosts:
+        mysql01:
+        mysql02:

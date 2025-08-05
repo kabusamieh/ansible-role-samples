@@ -1,0 +1,41 @@
+# Disable mysql stuff, or it will cause dependency issues when we try to install Percona packages.
+# Ignore errors here because these can fail if already applied.
+- name: "Disable mysql module."
+  command: dnf module disable mysql -y
+  ignore_errors: true
+
+- name: "Remove mariadb-connector-c-config"
+  command: rpm -e --nodeps mariadb-connector-c-config
+  ignore_errors: true
+
+- name: "Install database dependencies."
+  package:
+    name:
+      - percona-server-server
+      - percona-server-client
+      - percona-server-devel
+      - percona-server-shared
+      - percona-icu-data-files
+      - jemalloc
+    state: present
+
+- name: "Install RocksDB if applicable."
+  package:
+    name: percona-server-rocksdb
+    state: present
+  when:
+    - has_rocksdb is defined
+    - has_rocksdb | bool
+
+- name: "Install additional dependencies."
+  package:
+    name:
+      - gcc
+      - gcc-c++
+    state: present
+  when:
+
+- name: "Pip install mysqlclient libraries."
+  ansible.builtin.pip:
+    name: mysqlclient
+    state: present

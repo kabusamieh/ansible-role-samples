@@ -1,0 +1,135 @@
+{{ ansible_managed | comment }}
+
+{% if item.config.mods is defined %}
+{% for mod in item.config.mods %}
+LoadModule {{ mod.name }} {{ mod.location }}
+{% endfor %}
+{%- endif %}
+
+{% if item.config.listens is defined %}
+Listen {% for listen in item.config.listens %} {{ listen }} {% endfor %}
+{% endif %}
+{% if item.config.aliases is defined %}
+{% for alias in item.config.aliases %}
+Alias {{ alias.short }} {{ alias.full }}
+{% endfor %}
+{% endif %}
+
+{% if item.config.vhosts is defined %}
+{% for vhost in item.config.vhosts %}
+<VirtualHost {{ vhost.name }}>
+{% if vhost.server_name is defined %}
+    ServerName {{ vhost.server_name }}
+{% endif %}
+{% if vhost.parameters is defined %}
+{% for param in vhost.parameters %}
+    {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+{% if vhost.directories is defined %}
+{% for dir in vhost.directories %}
+
+    <Directory {{ dir.name }}>
+{% if dir.parameters is defined %}
+{% for param in dir.parameters %}
+        {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+{% if dir.locations is defined %}
+{% for loc in dir.locations %}
+
+        <Location {{ loc.name }}>
+{% if loc.requireall is defined %}
+            <RequireAll>
+{% for req in loc.requireall %}
+                Require {{ req }}
+{% endfor %}
+            </RequireAll>
+
+{% endif %}
+{% if loc.parameters is defined %}
+{% for param in loc.parameters %}
+            {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+        </Location>
+{% endfor %}
+{% endif %}
+    </Directory>
+{% endfor %}
+{% endif %}
+{% if vhost.locations is defined %}
+{% for loc in vhost.locations %}
+
+    <Location {{ loc.name }}>
+{% if loc.requireall is defined %}
+        <RequireAll>
+{% for req in loc.requireall %}
+            Require {{ req }}
+{% endfor %}
+        </RequireAll>
+
+{% endif %}
+{% if loc.parameters is defined %}
+{% for param in loc.parameters %}
+        {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+    </Location>
+{% endfor %}
+{% endif %}
+</VirtualHost>
+{% endfor %}
+{%- endif %}
+
+{% if item.config.directories is defined %}
+{% for dir in item.config.directories %}
+<Directory {{ dir.name }}>
+{% if dir.parameters is defined %}
+{% for param in dir.parameters %}
+    {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+{% if dir.locations is defined %}
+{% for loc in dir.locations %}
+
+    <Location {{ loc.name }}>
+{% if loc.requireall is defined %}
+        <RequireAll>
+{% for req in loc.requireall %}
+            Require {{ req }}
+{% endfor %}
+        </RequireAll>
+
+{% endif %}
+{% if loc.parameters is defined %}
+{% for param in loc.parameters %}
+        {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+    </Location>
+{% endfor %}
+{% endif %}
+</Directory>
+{% endfor %}
+{%- endif %}
+
+{% if item.config.locations is defined %}
+{% for loc in item.config.locations %}
+<Location {{ loc.name }}>
+{% if loc.requireall is defined %}
+    <RequireAll>
+{% for req in loc.requireall %}
+        Require {{ req }}
+{% endfor %}
+    </RequireAll>
+
+{% endif %}
+{% if loc.parameters is defined %}
+{% for param in loc.parameters %}
+    {{ param.name }} {{ param.value}}
+{% endfor %}
+{% endif %}
+</Location>
+{% endfor %}
+{%- endif %}

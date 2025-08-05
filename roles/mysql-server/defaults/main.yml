@@ -1,0 +1,50 @@
+mysql_create_readonly_user: true
+mysql_readonly_user: reader
+mysql_readonly_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61306139373839323339323430373063626135643331383137633333333333313237653464643763
+          3561386361653065333633326538633934633031623665340a353132336237313062306439333330
+          64623033633433623565386364356633376536313938313334626666366266316236393933633032
+          3930353338313134320a653431326130336634666263653935646134393264666533306639653738
+          35333031303362663937313038383934303038303031346266346566366630643835
+mysql_interim_password: '@T3MP0rary@' # We need this because it's MEDIUM compliant and MySQL 8 won't let us make changes without it.
+mysql_root_unencrypted: YimnLnI1JE7QoEL9 # Protections to be added
+mysql_repl_unencrypted: cibY59ACuO9aa8zD # Protections to be added
+default_se: InnoDB
+has_rocksdb: false
+mysql_specials_dbs: # If these get included in privilege grants, it errors
+  - information_schema
+  - performance_schema
+  - mysql
+  - sys
+
+# my.cnf MySQL variables. These are set to the actual MySQL 8.0 defaults.
+# https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html
+mysql_tmp_table_meg: 16
+mysql_heap_table_meg: 16
+mysql_max_conn: 151
+mysql_open_files: 5000
+mysql_search_depth: 62
+mysql_skip_dns: 0
+mysql_general_log: 0
+mysql_transact_isolation: REPEATABLE-READ
+mysql_binlog_expires: 2592000
+
+# my.cnf InnoDB variables. These are set to the actual InnoDB defaults.
+# https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html
+innodb_redo_log_meg: 100
+innodb_log_buffer_meg: 16
+innodb_page_cleaners: 4
+innodb_flush_method: O_DIRECT
+innodb_numa_interleave: 0
+innodb_flush_on_commit: 1
+innodb_io_capacity: 200
+innodb_tempdata_path: ibtmp1:12M:autoextend
+
+# my.cnf RocksDB variables. These are set to the actual RocksDB defaults.
+# https://docs.percona.com/percona-server/8.0/variables.html
+rocksdb_max_wal_gig: 2
+rocksdb_block_cache_gig: 1 # This is only 0.5G (512M) by default. Rounding up for simplicity in templating.
+rocksdb_block_size: 16384
+rocksdb_compaction_readahead_meg: 0
+rocksdb_bulk_load: 1000

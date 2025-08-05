@@ -1,0 +1,60 @@
+apache_server_name: "{{ ansible_fqdn }}"
+apache_config_custom_enable: false
+apache_config_custom:
+  - template_file: custom.conf.j2
+    deployment_location: /etc/httpd/conf.d/custom.conf
+    backup: true
+    config:
+      mods: # Modules to load
+        - name: ssl_module
+          location: modules/mod_ssl.so
+      listens:
+        - 443
+        - https
+      aliases:
+        - short: "/html"
+          full: "/var/www/html"
+      vhosts:
+        - name: "*:443"
+          server_name: "{{ apache_server_name }}"
+          parameters:
+            - name: "Options"
+              value: "+Indexes"
+          directories:
+            - name: "/var/www/html"
+              parameters:
+                - name: "Options"
+                  value: "+Indexes"
+              locations:
+                - name: /html
+                  parameters:
+                    - name: "Options"
+                      value: "+Indexes"
+                  requireall:
+                    - ssl-verify-client
+          locations:
+            - name: /html
+              parameters:
+                - name: "Options"
+                  value: "+Indexes"
+              requireall:
+                - ssl-verify-client
+      directories: # Directories defined outside of a vhosts context
+        - name: "/var/www/html"
+          parameters:
+            - name: "Options"
+              value: "+Indexes"
+          locations:
+            - name: /html
+              parameters:
+                - name: "Options"
+                  value: "+Indexes"
+              requireall:
+                - ssl-verify-client
+      locations: # Locations defined outside of a directories context
+        - name: /html
+          parameters:
+            - name: "Options"
+              value: "+Indexes"
+          requireall:
+            - ssl-verify-client

@@ -1,0 +1,34 @@
+# Check to make sure versionlocking is available.
+- name: "Update dnf. Check if python3-dnf-plugin-versionlock is installed and install if not."
+  ansible.builtin.yum:
+    name:
+      - dnf
+      - python3-dnf-plugin-versionlock
+    state: latest
+
+- name: "Clean up."
+  ansible.builtin.command: dnf clean all
+
+- name: "Check for available rhel updates."
+  ansible.builtin.dnf:
+    list: updates
+  register: dnf_output
+
+- name: "Count number of updates."
+  ansible.builtin.set_fact:
+    result_count: "{{ dnf_output.results | map(attribute='name') | list | length }}"
+    package_details: "{{ dnf_output.results | community.general.json_query('[*].{name:name, version:version}') }}"
+
+- name: "Display all package name, versions and total package count available per rhel8+ host."
+  ansible.builtin.debug:
+    msg:
+      - "There are {{ result_count }} available updates to install on {{ inventory_hostname }}"
+      - "Package_details: {{ dnf_output.results | community.general.json_query('[*].{name:name, version:version}') }}"
+  when: result_count > '0'
+
+- name: "Set stats for approval checkpoint."
+  ansible.builtin.set_stats:
+    aggregate: true
+    data:
+      approve_me: "{{ dict() | combine({ ansible_hostname: {'number_of_changes': result_count, 'package_list': package_details}}) }}"
+  when: result_count > '0'

@@ -1,0 +1,22 @@
+- name: "Include packages setup."
+  include_tasks: packages.yml
+
+- name: "Initialize database."
+  ansible.builtin.shell: "/usr/pgsql-{{ pgsql_version }}/bin/postgresql-{{ pgsql_version }}-setup initdb"
+  args:
+    creates: "/var/lib/pgsql/{{ pgsql_version }}/data/postgresql.conf"
+
+- name: "Enable and start postgresql."
+  ansible.builtin.systemd:
+    name: "postgresql-{{ pgsql_version }}"
+    state: started
+    enabled: true
+
+# Note that Postgres often refers to users as "roles."
+- name: "Setup PostgreSQL users & databases."
+  include_tasks: roles.yml
+  loop: "{{ pgsql_roles }}"
+  when: pgsql_roles is defined
+
+- name: "Include additional configurations."
+  include_tasks: configs.yml

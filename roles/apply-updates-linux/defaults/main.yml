@@ -1,0 +1,4 @@
+wait_day: "Tuesday"
+wait_time: "23 hours"
+do_wait: true
+omit_file: "/tmp/patch_me_not"

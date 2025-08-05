@@ -1,0 +1,113 @@
+- name: "Stat /usr/lib64/libjemalloc.so.1"
+  stat:
+    path: /usr/lib64/libjemalloc.so.1
+  register: stat_libjemalloc1
+
+- name: "Stat /usr/lib64/libjemalloc.so.2"
+  stat:
+    path: /usr/lib64/libjemalloc.so.2
+  register: stat_libjemalloc2
+
+- name: "MySQL LD_PRELOAD - /usr/lib64/libjemalloc.so.1"
+  ini_file:
+    path: /etc/sysconfig/mysql
+    section: null
+    option: LD_PRELOAD
+    value: /usr/lib64/libjemalloc.so.1
+    no_extra_spaces: true
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart mysqld
+  when: stat_libjemalloc1.stat.exists
+
+- name: "MySQL LD_PRELOAD - /usr/lib64/libjemalloc.so.2"
+  ini_file:
+    path: /etc/sysconfig/mysql
+    section: null
+    option: LD_PRELOAD
+    value: /usr/lib64/libjemalloc.so.2
+    no_extra_spaces: true
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart mysqld
+  when: stat_libjemalloc2.stat.exists
+
+- name: "Figure out innodb_buffer_pool_size."
+  set_fact:
+    # 70% of RAM, in GB, rounded up
+    # OR 2G as a minimum.
+    innodb_buffer_size_gig: "{{ [(0.70 * ansible_memtotal_mb / 1000) | round | int, 2] | max }}"
+  when:
+    - innodb_buffer_size_gig is not defined
+
+- name: "Figure out innodb_buffer_pool_instances."
+  set_fact:
+    # This can't be larger than 64 on high memory systems.
+    innodb_buffer_instances: "{{ [innodb_buffer_size_gig | int,64] | min }}"
+  when:
+    - innodb_buffer_instances is not defined
+
+- name: "Configure /etc/my.cnf"
+  template:
+    src: my.cnf.j2
+    dest: /etc/my.cnf
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart mysqld
+
+- name: "Configure /root/.my.cnf"
+  template:
+    src: .my.cnf.j2
+    dest: /root/.my.cnf
+    mode: 0644
+    owner: root
+    group: root
+
+- name: "Configure /var/lib/zabbix/.my.cnf"
+  template:
+    src: .my.cnf.j2
+    dest: /var/lib/zabbix/.my.cnf
+    mode: 0644
+    owner: zabbix
+    group: zabbix
+
+- name: "MySQL logrotate setup."
+  include_role:
+    name: ericsysmin.system.logrotate
+  vars:
+    logrotate_install: false
+    logrotate_files:
+      # Dash is needed because this is expected to be a list of multiple objects.
+      - name: mysql
+        paths:
+          - /var/lib/mysql/mysqld.log
+          - /var/lib/mysql/slow-queries.log
+        options:
+          - compress
+          - create 660 mysql mysql
+          - size 1G
+          - rotate 7
+          - dateext
+          - missingok
+          - notifempty
+          - sharedscripts
+        scripts:
+          postrotate: |
+            if test -x /usr/bin/mysqladmin && /usr/bin/mysqladmin --defaults-extra-file=/root/.my.cnf ping &>/dev/null
+            then
+              /usr/bin/mysql --defaults-extra-file=/root/.my.cnf -e 'select @@global.long_query_time into @lqt_save; set global long_query_time=2000; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
+            fi
+
+- name: "Configure /var/lib/mysql-files permissions."
+  file:
+    path: /var/lib/mysql-files/
+    state: directory
+    mode: 0777
+    owner: mysql
+    group: mysql

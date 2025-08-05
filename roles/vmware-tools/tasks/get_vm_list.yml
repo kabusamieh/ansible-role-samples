@@ -1,0 +1,26 @@
+- name: "Find VM folder"
+  block:
+    - name: "Find VM with ansible hostname"
+      community.vmware.vmware_guest_find:
+        name: "{{ item }}"
+      register: vm_path_a
+  rescue:
+    - name: "Find VM with FQDN"
+      community.vmware.vmware_guest_find:
+        name: "{{ item }}.{{ domain }}"
+      register: vm_path_b
+  when: "not item.startswith('qe')"
+
+- name: "Add to VM list (ansible hostname)"
+  ansible.builtin.set_fact:
+    vm_paths: "{{ vm_paths + [{'folder': vm_path_a.folders[0], 'vm': item}] }}"
+  when:
+    - vm_path_a is defined
+    - vm_path_a.failed is false
+
+- name: "Add to VM list (FQDN)"
+  ansible.builtin.set_fact:
+    vm_paths: "{{ vm_paths + [{'folder': vm_path_b.folders[0], 'vm': item + '.' + domain}] }}"
+  when:
+    - vm_path_a.failed is true
+    - vm_path_b is defined

@@ -1,0 +1,25 @@
+- name: "Install fail2ban."
+  ansible.builtin.package:
+    name: fail2ban
+    state: present
+
+- name: "Enable and start fail2ban."
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true
+
+- name: "Template jail.local"
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    mode: 0644
+    owner: root
+    group: root
+  notify: restart fail2ban
+
+- name: "Include Fail2ban Zabbix template config."
+  include_tasks: zabbix.yml
+  when:
+    - additional_templates is defined
+    - "'Fail2ban' in additional_templates"

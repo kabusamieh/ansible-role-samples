@@ -1,0 +1,72 @@
+- name: Gather facts
+  hosts: all
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: Remove /root/base_done
+      file:
+        path: /root/base_done
+        state: absent
+
+    - name: Gather all facts with timeout and 10min retry.
+      ansible.builtin.setup:
+        gather_timeout: 60
+      retries: 10
+      register: gather_result
+      until: gather_result is not failed
+
+- name: Microsoft Defemder.
+  hosts: all
+  gather_facts: false
+  strategy: free
+  become: true
+  roles:
+    - microsoft-defender-linux
+
+- name: Configure Fail2Ban
+  hosts: fail2ban
+  gather_facts: false
+  strategy: free
+  become: true
+  roles:
+    - fail2ban-config
+
+- name: Configure Apache web servers
+  hosts: apache
+  gather_facts: false
+  strategy: free
+  become: true
+  roles:
+    - buluma.httpd
+    - apache-config
+
+- name: Configure MySQL.
+  hosts: mysql
+  gather_facts: false
+  strategy: free
+  become: true
+  roles:
+    - mysql-server
+
+- name: Configure PostgreSQL.
+  hosts: postgresql
+  gather_facts: false
+  strategy: free
+  become: true
+  roles:
+    - postgresql-server
+
+- name: Touch /root/base_done
+  hosts: all
+  gather_facts: false
+  strategy: free
+  become: true
+  tasks:
+    - name: Touch /root/base_done
+      file:
+        path: /root/base_done
+        state: touch
+        owner: root
+        group: root
+        mode: 0644
+        

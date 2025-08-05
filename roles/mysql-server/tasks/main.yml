@@ -1,0 +1,29 @@
+- name: "Include packages setup."
+  include_tasks: packages.yml
+
+- name: "Include configs setup."
+  include_tasks: configs.yml
+
+# Make sure that MySQL restarts before continuing, if configuration changed.
+- name: "Execute any waiting handlers."
+  meta: flush_handlers
+
+- name: "Enable and start mysqld."
+  ansible.builtin.systemd:
+    name: mysqld
+    state: started
+    enabled: true
+
+- name: "Setup MySQL root credentials."
+  include_tasks: credentials_root.yml
+
+- name: "Setup MySQL user credentials."
+  include_tasks: credentials_user.yml
+  when: mysql_user_list is defined
+
+- name: "Activate RocksDB if applicable."
+  include_tasks: rocksdb.yml
+  when: has_rocksdb
+
+- name: "Load timezone tables."
+  ansible.builtin.shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql mysql"

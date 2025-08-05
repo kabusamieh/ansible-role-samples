@@ -1,0 +1,63 @@
+# Doing this here because the 'default' filter was being difficult
+- name: "Empty lists"
+  ansible.builtin.set_fact:
+    vm_paths: []
+    vm_sublist: []
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - take_snapshot
+    - delete_snapshot
+    - power_on
+
+- name: "Get VM list"
+  include_tasks:
+    file: get_vm_list.yml
+    apply:
+      tags:
+        - take_snapshot
+        - delete_snapshot
+        - power_on
+      delegate_to: localhost
+  loop: "{{ ansible_play_hosts }}"
+  run_once: true
+  tags:
+    - take_snapshot
+    - delete_snapshot
+    - power_on
+
+- name: "Include take_snapshot.yml"
+  include_tasks:
+    file: take_snapshot.yml
+    apply:
+      tags: take_snapshot
+      delegate_to: localhost
+  loop: "{{ vm_paths }}"
+  loop_control:
+    loop_var: vm_info
+  run_once: true
+  tags: take_snapshot
+
+- name: "Include delete_snapshot.yml"
+  include_tasks:
+    file: delete_snapshot.yml
+    apply:
+      tags: delete_snapshot
+      delegate_to: localhost
+  loop: "{{ vm_paths }}"
+  loop_control:
+    loop_var: vm_info
+  run_once: true
+  tags: delete_snapshot
+
+- name: "Include power_on.yml"
+  include_tasks:
+    file: power_on.yml
+    apply:
+      tags: power_on
+      delegate_to: localhost
+  loop: "{{ vm_paths }}"
+  loop_control:
+    loop_var: vm_info
+  run_once: true
+  tags: power_on

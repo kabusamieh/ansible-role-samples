@@ -1,0 +1,20 @@
+# Ansible block module doesn't work with loops, but include_tasks does.
+- name: "Stat {{ item }}"
+  stat:
+    path: "{{ item }}"
+  register: stat_log
+
+- name: "Grep temporary password."
+  shell: "echo `grep -a 'temporary.*root@localhost' {{ item }} | sed 's/.*root@localhost: //'`"
+  register: mysql_root_password_temp
+  when:
+    - stat_log is defined
+    - stat_log.stat.exists
+
+- name: "Set temporary password fact."
+  set_fact:
+    mysql_root_password: "{{ mysql_root_password_temp.stdout }}"
+  when:
+    - mysql_root_password is not defined
+    - mysql_root_password_temp.stdout is defined
+    - mysql_root_password_temp.stdout | length > 0

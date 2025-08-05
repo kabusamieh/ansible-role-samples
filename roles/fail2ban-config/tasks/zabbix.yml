@@ -1,0 +1,15 @@
+- name: "Add Fail2ban Zabbix UserParameters."
+  ansible.builtin.copy:
+    src: zabbix/fail2ban.conf
+    dest: /etc/zabbix/zabbix_agent2.d/fail2ban.conf
+    mode: 0644
+    owner: zabbix
+    group: zabbix
+
+- name: "Add Zabbix -> Fail2ban commands to sudoers."
+  ansible.builtin.copy:
+    src: sudoers/zabbix
+    dest: /etc/sudoers.d/zabbix
+    mode: 0440
+    owner: root
+    group: root

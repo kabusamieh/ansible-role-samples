@@ -1,0 +1,188 @@
+#  Ansible Automation Platform CANNOT combine host specific variables with those that come from Satellite Inventory.
+#  This file is just a reference and doesn't actually get used at runtime.
+#  Any variable changes NEED be made in the GUI here:  https://ansible.vmhi.local/#/hosts/958/details
+
+# SSH Configuration Variables
+configure_ssh: false
+ssh_hosts:
+  - host: '*'
+    settings: |
+        GSSAPIAuthentication yes
+        ForwardX11Trusted yes
+        
+        SendEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+        SendEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+        SendEnv LC_IDENTIFICATION LC_ALL LANGUAGE
+        SendEnv XMODIFIERS
+
+# SSHD Configuration Variables
+configure_sshd: true
+sshd_override_default_subsystem: true
+sshd_settings: |
+  SyslogFacility AUTHPRIV
+  
+  GSSAPIAuthentication yes
+  GSSAPICleanupCredentials no
+  
+  X11Forwarding yes
+  
+  AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+  AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+  AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
+  AcceptEnv XMODIFIERS
+sshd_match_addresses:
+  - address: "*,!10.10.0.0/16"
+    settings: |
+        ForceCommand internal-sftp -l INFO
+        DisableForwarding yes
+        PermitRootLogin no
+        PermitTunnel no
+        GSSAPIAuthentication yes
+        PubkeyAuthentication yes
+
+# Local Linux user accounts
+user1_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31306364646536633233316164626633663932613565373533306463353961623466613565373631
+          3133646338656164306335393237656561356632393034390a643262666162643461313035653938
+          32666438633533663066623539343038623235643639353235656630613934633238613734643761
+          6335343636623263340a346238383132383232396362343965343734393338633362386235616536
+          3538
+user2_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          30303334656264303530306663623139623261663239313964666337643663356132336531643766
+          6561313930623163353236373239356237303831303838320a303462663862383035346131303566
+          35313537326661336338646139396537343038623565613938333330353966393964626439333931
+          3364643438386434630a323263313866623763373965356331623366363161313630343364623236
+          6664
+user3_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38393831626665313930323131333039636264393239643364383431663261343864326135653339
+          3932616136356332626666313037356436373439303666380a313734303931303137323266323932
+          61653938663237366437326434613733396632373965313539376162616432333264623135393336
+          3462366261663337350a613133666633306538666431623534323661323839646330626462656464
+          6134
+user4_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31613265653134396639636266316565353861326638366633313537313662343734366362353136
+          6366663037336662363333306537336430666432333165640a383337393333333234393638313532
+          31343565393639366136396430656363346339346533346530666431346132373438343263366231
+          3664333530616639310a313033373462636536313631393235613035353639393832366435623736
+          6363
+local_users:
+  - { user: user1, password: "{{ user1_password }}", description: "SFTP User", shell: "/sbin/nologin" }
+  - { user: user2, password: "{{ user2_password }}", description: "SFTP User", shell: "/sbin/nologin" }
+  - { user: user3, password: "{{ user3_password }}", description: "SFTP User", shell: "/sbin/nologin" }
+  - { user: user4, password: "{{ user4_password }}", description: "SFTP User", shell: "/sbin/nologin" }
+
+# Fail2Ban Configuration Variables
+f2b_jail_bantime: 86400
+f2b_jail_maxretry: 5
+f2b_jail_ignoreips:
+  - 127.0.0.1/8
+  - 10.0.0.0/8
+  - 10.10.0.0/16
+  - ::1
+
+f2b_ssh: true
+f2b_http: true
+f2b_smtp: true
+f2b_http_service: apache
+
+f2b_sshd_bool: true
+f2b_apache_auth_bool: true
+f2b_apache_badbots_bool: true
+f2b_apache_noscript_bool: true
+f2b_apache_overflows_bool: true
+f2b_apache_nohome_bool: true
+f2b_apache_botsearch_bool: true
+f2b_apache_fakegooglebot_bool: true
+f2b_apache_modsecurity_bool: true
+f2b_apache_shellshock_bool: true
+f2b_postfix_bool: true
+
+# Postfix Configuration Variables
+aliases_list: []  # Bounce messages can end up looping on the SMTP relay, so we need to blackhole these to /var/spool/mail/root.
+postfix_conf:
+  smtpd_recipient_restrictions: permit_mynetworks
+  mynetworks: "127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16"
+  inet_interfaces: "all"
+  relayhost: orgmail-com.mail.protection.outlook.com
+  smtp_transport_rate_delay: 2s  # https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits#receiving-and-sending-limits
+
+# HTTPD (Apache) Vars
+apache_server_name: repos.org.com
+apache_config_custom_enable: true
+apache_config_custom:
+  - template_file: custom.conf.j2
+    deployment_location: /etc/httpd/conf.d/ssl.conf
+    backup: false
+    config:
+      parameters:
+        - name: SSLCARevocationCheck
+          value: chain
+        - name: SSLCARevocationFile
+          value: /etc/pki/CA/crl/ggg.crl
+        - name: SSLCACertificateFile
+          value: /etc/pki/CA/certs/ggg.crt
+      mods:
+        - name: ssl_module
+          location: modules/mod_ssl.so
+      listens:
+        - 443
+      vhosts:
+        - name: "*:443"
+          server_name: "{{ apache_server_name }}"
+          parameters:
+            - name: SSLEngine
+              value: "on"
+            - name: SSLCertificateFile
+              value: "/etc/pki/server.crt"
+            - name: SSLCertificateKeyFile
+              value: "/etc/pki/server.pem"
+            - name: SSLVerifyClient
+              value: optional
+            - name: SSLVerifyDepth
+              value: 2
+            - name: SSLOptions
+              value: "+FakeBasicAuth +StrictRequire"
+          locations:
+            - name: '"/"'
+              parameters:
+                - name: "AuthBasicProvider"
+                  value: "ldap"
+                - name: AuthType
+                  value: Basic
+                - name: AuthName
+                  value: '"Org Repositories"'
+                - name: AuthLDAPURL
+                  value: '"ldap://vmhi.local:3268/DC=vmhi,DC=local?sAMAccountName?sub?(objectClass=*)" NONE'
+                - name: AuthLDAPBindDN
+                  value: '"vmhi\linuxLDAP"'
+                - name: AuthLDAPBindPassword
+                  value: "Org1984"
+                - name: Require
+                  value: "valid-user"
+                - name: Require
+                  value: "group vasDev"
+              requireall:
+                - "ssl-verify-client"
+                - 'expr %{SSL_CLIENT_I_DN_O} == "Org, Inc."'
+                - 'expr %{SSL_CLIENT_I_DN_OU} == "RPM Client Certificate Authentication"'
+  - template_file: custom.conf.j2
+    deployment_location: /etc/httpd/conf.d/repos.conf
+    backup: false
+    config:
+      aliases:
+        - short: "/repos"
+          full: "/var/www/repos"
+      directories:
+        - name: '"/var/www/repos"'
+          parameters:
+            - name: Options
+              value: "+Indexes"
+            - name: IndexOptions
+              value: "NameWidth=*,DescriptionWidth=*"
+
+remount_paths:
+  - { src: /var/www/repos, dest: /data00/repos, owner: apache, group: apache,  services: [httpd] }

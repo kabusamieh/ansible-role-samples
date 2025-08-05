@@ -1,0 +1,5 @@
+- name: reboot
+  become: true
+  ansible.builtin.reboot:
+        reboot_timeout: 1200
+        msg: "Reboot initiated by Ansible following kernel updates."

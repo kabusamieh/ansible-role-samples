@@ -1,0 +1,3 @@
+vmware_datacenter: VMDC
+domain: org.local
+snap_date: "{{ lookup('pipe','date +%Y%m%d') }}"

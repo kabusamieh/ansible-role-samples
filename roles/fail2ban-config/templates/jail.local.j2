@@ -1,0 +1,82 @@
+# File templated by Ansible
+[DEFAULT]
+bantime  = {{ f2b_jail_bantime }}
+findtime = {{ f2b_jail_findtime }}
+maxretry = {{ f2b_jail_maxretry }}
+
+banaction = {{ f2b_jail_banaction }}
+banaction_allports = {{ f2b_jail_banaction_allports }}
+
+##
+## JAILS
+##
+
+{% if f2b_ssh %}
+# SSH Servers
+#
+[sshd]
+enabled = {{ f2b_sshd_bool }}
+
+[selinux-ssh]
+enabled = {{ f2b_selinux_ssh_bool }}
+{% endif %}
+
+{% if f2b_http and f2b_http_service == 'apache' %}
+# HTTP Servers
+#
+[apache-auth]
+enabled = {{ f2b_apache_auth_bool }}
+
+[apache-badbots]
+enabled = {{ f2b_apache_badbots_bool }}
+
+[apache-noscript]
+enabled = {{ f2b_apache_noscript_bool }}
+
+[apache-overflows]
+enabled = {{ f2b_apache_overflows_bool }}
+
+[apache-nohome]
+enabled = {{ f2b_apache_nohome_bool }}
+
+[apache-botsearch]
+enabled = {{ f2b_apache_botsearch_bool }}
+
+[apache-fakegooglebot]
+enabled = {{ f2b_apache_fakegooglebot_bool }}
+
+[apache-modsecurity]
+enabled = {{ f2b_apache_modesecurity_bool }}
+
+[apache-shellshock]
+enabled = {{ f2b_apache_shellshock_bool }}
+
+{% elif f2b_http and f2b_http_service == 'nginx' %}
+# HTTP Servers
+#
+[nginx-http-auth]
+enabled = {{ f2b_nginx_http_auth_bool }}
+
+[nginx-botsearch]
+enabled = {{ f2b_nginx_botsearch_bool }}
+
+[nginx-bad-request]
+enabled = {{ f2b_nginx_bad_request_bool }}
+{% endif %}
+
+{% if f2b_vsftpd %}
+# FTP Servers
+#
+[vsftpd]
+enabled = {{ f2b_vsftpd_bool }}
+{% endif %}
+
+{% if f2b_smtp %}
+# SMTP Servers
+#
+[postfix]
+enabled = {{ f2b_postfix_bool }}
+
+[postfix-rbl]
+enabled = {{ f2b_postfix_rbl_bool }}
+{% endif %}

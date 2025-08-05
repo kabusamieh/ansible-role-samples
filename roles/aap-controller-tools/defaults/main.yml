@@ -1,0 +1,2 @@
+aap_inventory: vmhi
+weekdays: = -1 # Setting this as default to ignore argument if not provided

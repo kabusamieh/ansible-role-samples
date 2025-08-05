@@ -1,0 +1,44 @@
+f2b_ssh: false
+f2b_http: false
+f2b_vsftpd: false
+f2b_smtp: false
+f2b_http_service: apache
+
+## Default Jail Variables
+# These are based on the defaults from jail.conf
+f2b_jail_bantime: 3600
+f2b_jail_findtime: 600
+f2b_jail_maxretry: 10
+f2b_jail_banaction: iptables-multiport
+f2b_jail_banaction_allports: iptables-allports
+
+## SSH Jail Variables
+# Enable SSH Jails
+f2b_sshd_bool: false
+f2b_selinux_ssh_bool: false
+
+## HTTP Jail Variables
+# Enable HTTP-Apache Jails
+f2b_apache_auth_bool: false
+f2b_apache_badbots_bool: false
+f2b_apache_noscript_bool: false
+f2b_apache_overflows_bool: false
+f2b_apache_nohome_bool: false
+f2b_apache_botsearch_bool: false
+f2b_apache_fakegooglebot_bool: false
+f2b_apache_modesecurity_bool: false
+f2b_apache_shellshock_bool: false
+
+# Enable HTTP-Nginx Jails
+f2b_nginx_http_auth_bool: false
+f2b_nginx_botsearch_bool: false
+f2b_nginx_bad_request_bool: false
+
+## FTP Jail Variables
+# Enable VSFTPD Jail
+f2b_vsftpd_bool: false
+
+## SMTP Jail Variables
+# Enable Postfix Jails
+f2b_postfix_bool: false
+f2b_postfix_rbl_bool: false

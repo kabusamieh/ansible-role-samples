@@ -1,0 +1,7 @@
+all:
+  hosts:
+    httpd01:
+  children:
+    fail2ban:
+      hosts:
+        httpd01:

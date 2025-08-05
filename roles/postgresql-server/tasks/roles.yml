@@ -1,0 +1,43 @@
+# Using a block to only 'become' once.
+- name: "Database setup."
+  become: true
+  become_user: postgres
+  block:
+    - name: "Create {{ item.user }} user."
+      community.postgresql.postgresql_user:
+        name: "{{ item.user }}"
+        password: "{{ item.password }}"
+        state: present
+        encrypted: true
+
+    - name: "Create {{ item.db_name }} databases."
+      community.postgresql.postgresql_db:
+        name: "{{ item.db_name }}"
+        owner: "{{ item.user }}"
+        state: present
+
+    - name: "Set {{ item.user }} permissions."
+      community.postgresql.postgresql_privs:
+        db: "{{ item.db_name }}"
+        privs: ALL
+        objs: ALL_IN_SCHEMA
+        role: "{{ item.user }}"
+        state: present
+  when: "'monitor' not in item.user"
+
+- name: "Monitoring setup."
+  become: true
+  become_user: postgres
+  block:
+    - name: "Create {{ item.user }} user."
+      community.postgresql.postgresql_user:
+        name: "{{ item.user }}"
+        password: "{{ item.password }}"
+        state: present
+        encrypted: true
+    - name: "Set permissions for {{ item.user }} user."
+      community.postgresql.postgresql_membership:
+        group: pg_monitor
+        target_role: "{{ item.user }}"
+        state: present
+  when: "'monitor' in item.user"

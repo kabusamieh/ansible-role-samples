@@ -1,0 +1,25 @@
+- name: "Set fact to configure RocksDB."
+  ansible.builtin.set_fact:
+    config_rocksdb: true
+    change_se: true
+
+# MySQL needs to be running for this to work, but it will not run if we have already templated RocksDB variables.
+# Hence, we must template defaults/InnoDB and then retemplate my.cnf after enabling RocksDB.
+# Unfortunately, simply having RocksDB installed does not make it usable OOTB.
+- name: "Enable RocksDB via ps-admin."
+  ansible.builtin.shell: "ps-admin --enable-rocksdb -u root -p {{ mysql_root_unencrypted }}"
+
+- name: "Remove my.cnf for retemplating."
+  ansible.builtin.file:
+    path: /etc/my.cnf
+    state: absent
+
+- name: "Reconfigure /etc/my.cnf"
+  template:
+    src: my.cnf.j2
+    dest: /etc/my.cnf
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart mysqld

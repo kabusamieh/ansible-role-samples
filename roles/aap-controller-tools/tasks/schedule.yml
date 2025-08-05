@@ -1,0 +1,69 @@
+# Reference https://docs.ansible.com/ansible/latest/collections/awx/awx/schedule_module.html
+#           https://dateutil.readthedocs.io/en/stable/rrule.html
+#           https://icalendar.org/iCalendar-RFC-5545/3-2-19-time-zone-identifier.html
+# Most variables here are to be set only in AAP.
+- name: "Schedule {{ aap_template_name }} Job"
+  ansible.controller.schedule:
+    name: "Auto-Scheduled: {{ aap_template_name }}"
+    description: "Job scheduled by AAP on {{ lookup('pipe','date') }}"
+    unified_job_template: "{{ aap_template_name }}"
+    inventory: "{{ aap_inventory }}"
+    limit: "{{ inv_limit }}"
+    job_tags: "{{ job_tags_csv }}"
+    job_type: "{{ run_or_check }}"
+    extra_data: "{{ extra_variables }}"
+    rrule: "DTSTART;TZID=America/New_York:{{ scheduled_date }} RRULE:{{ rrules }}"
+  vars:
+    rrules: "FREQ={{ frequency }};INTERVAL={{ interval }};COUNT={{ occurrences }};BYWEEKDAY={{ weekdays }}"
+  tags: custom
+
+# Making this task as a preconfig for the Rolling Linux Updates project
+- name: "Schedule {{ aap_template_name }} Job - Same-Day During Off Hours."
+  ansible.controller.schedule:
+    name: "Auto-Scheduled for Tonight: {{ aap_template_name }}"
+    description: "Job scheduled by AAP on {{ lookup('pipe','date') }}"
+    unified_job_template: "{{ aap_template_name }}"
+    inventory: "{{ aap_inventory }}"
+    limit: "{{ inv_limit }}"
+    job_tags: "{{ job_tags_csv }}"
+    job_type: "{{ run_or_check }}"
+    extra_data: "{{ extra_variables }}"
+    rrule: "DTSTART;{{ tonight }} RRULE:{{ rrules }}"
+  vars:
+    tonight: "TZID=America/New_York:{{ lookup('pipe','date +%Y%m%d') }}T230000"
+    rrules: "FREQ=DAILY;INTERVAL=1;COUNT=1"
+  tags: today_off_hours
+
+# Making this task as a preconfig for the Rolling Linux Updates project
+- name: "Schedule {{ aap_template_name }} Job - {{ weekdays }} During Off Hours."
+  ansible.controller.schedule:
+    name: "Auto-Scheduled for Later: {{ aap_template_name }}"
+    description: "Job scheduled by AAP on {{ lookup('pipe','date') }}"
+    unified_job_template: "{{ aap_template_name }}"
+    inventory: "{{ aap_inventory }}"
+    limit: "{{ inv_limit }}"
+    job_tags: "{{ job_tags_csv }}"
+    job_type: "{{ run_or_check }}"
+    extra_data: "{{ extra_variables }}"
+    rrule: "DTSTART;{{ tonight }} RRULE:{{ rrules }};BYWEEKDAY={{ weekdays }}"
+  vars:
+    tonight: "TZID=America/New_York:{{ lookup('pipe','date +%Y%m%d') }}T230000"
+    rrules: "FREQ=WEEKLY;INTERVAL=1;COUNT=1"
+  tags: weekday_off_hours
+
+# Making this task as a preconfig for the Rolling Linux Updates project
+- name: "Schedule {{ aap_template_name }} Job - {{ weekdays }} During Off Hours."
+  ansible.controller.schedule:
+    name: "Auto-Scheduled for Next Week: {{ aap_template_name }} ({{ extra_variables.lc_env | default('-') }})"
+    description: "Job scheduled by AAP on {{ lookup('pipe','date') }}"
+    unified_job_template: "{{ aap_template_name }}"
+    inventory: "{{ aap_inventory }}"
+    limit: "{{ inv_limit }}"
+    job_tags: "{{ job_tags_csv }}"
+    job_type: "{{ run_or_check }}"
+    extra_data: "{{ extra_variables }}"
+    rrule: "DTSTART;{{ tonight }} RRULE:{{ rrules }}"
+  vars:
+    tonight: "TZID=America/New_York:{{ lookup('pipe','date +%Y%m%d -d \"+1 week\"') }}T230000"
+    rrules: "FREQ=WEEKLY;INTERVAL=1;COUNT=1"
+  tags: week_out_off_hours

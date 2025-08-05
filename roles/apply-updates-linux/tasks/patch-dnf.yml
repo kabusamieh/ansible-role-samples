@@ -1,0 +1,45 @@
+- name: "Run updates."
+  block:
+  - name: "Update cache & Update installed packages."
+    ansible.builtin.dnf:
+      update_cache: true
+      name: '*'
+      state: latest
+      update_only: true
+      skip_broken: true
+  rescue:
+    - name: "Pip remove urllib3 module."
+      ansible.builtin.pip:
+        name: urllib3
+        state: absent
+    - name: "Install urllib3 RPM."
+      ansible.builtin.dnf:
+        name: python-urllib3
+        state: present
+    - name: "Patch msodbcsql Package."
+      ansible.builtin.dnf:
+        name: msodbcsql
+        state: latest
+        update_only: true
+      environment:
+        ACCEPT_EULA: 'y'
+    - name: "Install mssql-tools Packages."
+      ansible.builtin.dnf:
+        name: mssql-tools
+        state: latest
+        update_only: true
+      environment:
+        ACCEPT_EULA: 'y'
+    - name: "Back to updating packages."
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        update_only: true
+        skip_broken: true
+
+- name: "Check if reboot is required following package updates."
+  ansible.builtin.command: dnf needs-restarting -r
+  register: reboot_required
+  failed_when: false
+  changed_when: reboot_required.rc != 0
+  notify: reboot

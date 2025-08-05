@@ -1,0 +1,36 @@
+# We need yum-utils in order to use needs-restarting on RHEL7 systems.
+# Also check to make sure versionlocking is available.
+- name: "Update yum. Check if yum-utils and yum-plugin-versionlock are installed and install if not."
+  ansible.builtin.yum:
+    name:
+      - yum
+      - yum-plugin-versionlock
+      - yum-utils
+    state: latest
+
+- name: "Clean up."
+  ansible.builtin.command: yum clean all
+
+- name: "Check for available rhel package updates."
+  ansible.builtin.yum:
+    list: updates
+  register: yum_output
+
+- name: "Count number of updates."
+  ansible.builtin.set_fact:
+    result_count: "{{ yum_output.results | map(attribute='name') | list | length }}"
+    package_details: "{{ yum_output.results | community.general.json_query('[*].{name:name, version:version}') }}"
+
+- name: "Display all package name, versions and total package count available per rhel7 host."
+  ansible.builtin.debug:
+    msg:
+      - "There are {{ result_count }} available updates to install on {{ inventory_hostname }}"
+      - "Package_details: {{ yum_output.results | community.general.json_query('[*].{name:name, version:version}') }}"
+  when: result_count > '0'
+
+- name: "Set stats for approval checkpoint."
+  ansible.builtin.set_stats:
+    aggregate: true
+    data:
+      approve_me: "{{ dict() | combine({ ansible_hostname: {'number_of_changes': result_count, 'package_list': package_details}}) }}"
+  when: result_count > '0'

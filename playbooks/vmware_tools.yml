@@ -1,0 +1,6 @@
+- name: "Use VMWare Tools"
+  hosts: all,!offline,!customer_cofe_servers,!vcasatellite,!qe*
+  connection: local
+  gather_facts: false
+  roles:
+    - vmware-tools

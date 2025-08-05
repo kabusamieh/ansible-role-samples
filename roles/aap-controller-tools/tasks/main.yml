@@ -1,0 +1,5 @@
+# Planning to use tags to control which tools are evoked.
+- name: "Include schedule.yml"
+  include_tasks:
+    file: schedule.yml
+  tags: schedule
