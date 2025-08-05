@@ -1,0 +1,23 @@
+# This role exists for the sake of completion and is unused except in quickshot playbooks.
+
+- name: "Uninstall MDATP - Debian"
+  ansible.builtin.apt:
+    name: mdatp
+    state: absent
+  when: ansible_os_family == "Debian"
+
+- name: "Uninstall MDATP - Red Hat 7"
+  ansible.builtin.yum:
+    name: mdatp
+    state: absent
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version == '7'
+
+- name: "Uninstall MDATP - Red Hat 8/9"
+  ansible.builtin.dnf:
+    name: mdatp
+    state: absent
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version != '7'

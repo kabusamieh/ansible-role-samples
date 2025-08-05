@@ -1,0 +1,20 @@
+- name: "Include onboarding_setup.yml"
+  include_tasks:
+    file: onboarding_setup.yml
+
+# Repo added by Satellite on RH systems
+- name: "Include add_mdatp_repo.yml for Debian-based OS"
+  include_tasks:
+    file: add_mdatp_repo.yml
+  when: ansible_os_family == "Debian"
+
+- name: "Include install_mdatp.yml"
+  include_tasks:
+    file: install_mdatp.yml
+
+# We want this to restart every time, daily, because of memory issues after it runs for a long time.
+- name: "Enable and Restart mdatp."
+  ansible.builtin.service:
+    name: mdatp
+    enabled: true
+    state: restarted

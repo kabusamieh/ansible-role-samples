@@ -1,0 +1,15 @@
+# For Red Hat based hosts, this is handled by Red Hat Satellite.
+
+- name: "Add Microsoft APT key"
+  ansible.builtin.apt_key:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+
+# Evidently we will need to add additional tasks for other Debian based OS
+- name: "Add Microsoft APT repository - Ubuntu"
+  ansible.builtin.apt_repository:
+    repo: 'deb https://packages.microsoft.com/ubuntu/{{ ansible_distribution_version }}/prod {{ ansible_distribution_release }} main'
+    update_cache: yes
+    state: present
+    filename: microsoft-prod
+  when: ansible_distribution == "Ubuntu"
